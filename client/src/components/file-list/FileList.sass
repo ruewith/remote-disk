@@ -1,0 +1,46 @@
+.file
+    &Enum
+        display: flex
+    &List
+        & .file
+            &List
+                &Header
+                    display: flex
+            &Enum
+                flex-direction: column
+            &Type
+                width: 5%
+            &Name
+                width: 65%
+            &Date
+                width: 10%
+                text-align: center
+            &Size
+                width: 10%
+                text-align: center
+            &Action
+                width: 10%
+                display: flex
+                justify-content: end
+            &Item
+                display: flex
+                justify-content: space-between
+                align-items: center
+                margin: .25rem 0
+            &Icon
+                font-size: 48px
+    &Grid
+        & .file
+            &List
+                &Header
+                    display: none
+            &Item
+                width: 150px
+                text-align: center
+                margin: 0 .25rem
+            &Date
+                display: none
+            &Size
+                display: none
+            &Icon
+                font-size: 64px

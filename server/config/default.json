@@ -1,0 +1,7 @@
+{
+    "serverPort": 5000,
+    "dbUrl": "mongodb://localhost:27017/personal",
+    "secretKey": "secret-key",
+    "filePath": "/home/ruewith/Workspace/personal/personal-monolith/server/files",
+    "staticPath": "/home/ruewith/Workspace/personal/personal-monolith/server/static"
+}
