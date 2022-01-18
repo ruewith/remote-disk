@@ -1,20 +1,48 @@
-import React from "react";
+import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { NavLink } from "react-router-dom";
 import { FaUniversity, FaUserCircle } from "react-icons/fa";
-import { Container, Button, Row, Col, Image } from "react-bootstrap";
+import { Container, Button, Row, Col, Form, Image } from "react-bootstrap";
 
 import "./Header.sass";
 
 import { logout } from "../../reducers/userReducer";
+import { getFiles, searchFiles } from "../../actions/file";
+import { showLoader } from "../../reducers/appReducer";
 
 import { API_URL } from "../../config";
 
 const Header = () => {
-    const isAuth = useSelector((state) => state.user.isAuth);
-    const currentUser = useSelector((state) => state.user.currentUser);
     const dispatch = useDispatch();
+
+    const isAuth = useSelector((state) => state.user.isAuth);
+    const currentDir = useSelector((state) => state.files.currentDir);
+    const currentUser = useSelector((state) => state.user.currentUser);
+    const [searchName, setSearchName] = useState("");
+    const [searchTimeout, setSearchTimeout] = useState(false);
+
     const avatarUrl = currentUser.avatar ? `${API_URL + currentUser.avatar}` : null;
+
+    const searchChangeHandler = (event) => {
+        setSearchName(event.target.value);
+        if (searchTimeout != false) {
+            clearTimeout(searchTimeout);
+        }
+        dispatch(showLoader());
+        if (event.target.value != "") {
+            setSearchTimeout(
+                setTimeout(
+                    (value) => {
+                        dispatch(searchFiles(value));
+                    },
+                    500,
+                    event.target.value
+                )
+            );
+        } else {
+            dispatch(getFiles(currentDir));
+        }
+    };
 
     return (
         <header className="header py-3 bg-dark text-white">
@@ -37,8 +65,14 @@ const Header = () => {
                         </Col>
                     )}
                     {isAuth && (
-                        <Col sm={3} className="d-flex justify-content-end align-items-center">
-                            <NavLink to="/profile">
+                        <Col sm={4} className="d-flex justify-content-end align-items-center">
+                            <Form.Control
+                                type="text"
+                                placeholder="Название файла..."
+                                value={searchName}
+                                onChange={(event) => searchChangeHandler(event)}
+                            />
+                            <NavLink className="d-inline-block mx-1" to="/profile">
                                 {avatarUrl ? (
                                     <Image src={avatarUrl} width={48} roundedCircle />
                                 ) : (

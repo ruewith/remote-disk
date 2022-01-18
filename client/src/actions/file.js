@@ -4,85 +4,79 @@ import { addUploadFile, changeUploadFile, showUploader } from "../reducers/uploa
 import { hideLoader, showLoader } from "../reducers/appReducer";
 import { API_URL } from "../config";
 
-export function getFiles(dirId, sort) {
-    return async (dispatch) => {
-        try {
-            dispatch(showLoader());
-            let url = `${API_URL}api/files`;
-            if (dirId) {
-                url = `${API_URL}api/files?parent=${dirId}`;
-            }
-            if (sort) {
-                url = `${API_URL}api/files?sort=${sort}`;
-            }
-            if (dirId && sort) {
-                url = `${API_URL}api/files?parent=${dirId}&sort=${sort}`;
-            }
-            const response = await axios.get(url, {
-                headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-            });
-            dispatch(setFiles(response.data));
-        } catch (error) {
-            console.error(error.response.data.message);
-        } finally {
-            dispatch(hideLoader());
+export const getFiles = (dirId, sort) => async (dispatch) => {
+    try {
+        dispatch(showLoader());
+        let url = `${API_URL}api/files`;
+        if (dirId) {
+            url = `${API_URL}api/files?parent=${dirId}`;
         }
-    };
-}
+        if (sort) {
+            url = `${API_URL}api/files?sort=${sort}`;
+        }
+        if (dirId && sort) {
+            url = `${API_URL}api/files?parent=${dirId}&sort=${sort}`;
+        }
+        const response = await axios.get(url, {
+            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        });
+        dispatch(setFiles(response.data));
+    } catch (error) {
+        console.error(error.response.data.message);
+    } finally {
+        dispatch(hideLoader());
+    }
+};
 
-export function createDir(dirId, name) {
-    return async (dispatch) => {
-        try {
-            const response = await axios.post(
-                `${API_URL}api/files`,
-                {
-                    name,
-                    parent: dirId,
-                    type: "dir",
-                },
-                {
-                    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+export const createDir = (dirId, name) => async (dispatch) => {
+    try {
+        const response = await axios.post(
+            `${API_URL}api/files`,
+            {
+                name,
+                parent: dirId,
+                type: "dir",
+            },
+            {
+                headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+            }
+        );
+        dispatch(addFile(response.data));
+    } catch (error) {
+        console.error(error.response.data.message);
+    }
+};
+
+export const uploadFile = (file, dirId) => async (dispatch) => {
+    try {
+        const formData = new FormData();
+        formData.append("file", file);
+        if (dirId) {
+            formData.append("parent", dirId);
+        }
+        const uploadFile = { name: file.name, progress: 0, id: Date.now() };
+        dispatch(showUploader());
+        dispatch(addUploadFile(uploadFile));
+        const response = await axios.post(`${API_URL}api/files/upload`, formData, {
+            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+            onUploadProgress: (progressEvent) => {
+                const totalLength = progressEvent.lengthComputable
+                    ? progressEvent.total
+                    : progressEvent.target.getResponseHeader("content-length") ||
+                      progressEvent.target.getResponseHeader("x-decompressed-content-length");
+                if (totalLength) {
+                    uploadFile.progress = Math.round((progressEvent.loaded * 100) / totalLength);
+                    dispatch(changeUploadFile(uploadFile));
                 }
-            );
-            dispatch(addFile(response.data));
-        } catch (error) {
-            console.error(error.response.data.message);
-        }
-    };
-}
+            },
+        });
+        dispatch(addFile(response.data));
+    } catch (error) {
+        console.error(error?.response?.data?.message);
+    }
+};
 
-export function uploadFile(file, dirId) {
-    return async (dispatch) => {
-        try {
-            const formData = new FormData();
-            formData.append("file", file);
-            if (dirId) {
-                formData.append("parent", dirId);
-            }
-            const uploadFile = { name: file.name, progress: 0, id: Date.now() };
-            dispatch(showUploader());
-            dispatch(addUploadFile(uploadFile));
-            const response = await axios.post(`${API_URL}api/files/upload`, formData, {
-                headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-                onUploadProgress: (progressEvent) => {
-                    const totalLength = progressEvent.lengthComputable
-                        ? progressEvent.total
-                        : progressEvent.target.getResponseHeader("content-length") ||
-                          progressEvent.target.getResponseHeader("x-decompressed-content-length");
-                    if (totalLength) {
-                        uploadFile.progress = Math.round((progressEvent.loaded * 100) / totalLength);
-                        dispatch(changeUploadFile(uploadFile));
-                    }
-                },
-            });
-            dispatch(addFile(response.data));
-        } catch (error) {
-            console.error(error?.response?.data?.message);
-        }
-    };
-}
-
-export async function downloadFile(file) {
+export const downloadFile = async (file) => {
     const response = await fetch(`${API_URL}api/files/download?id=${file._id}`, {
         headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -98,37 +92,33 @@ export async function downloadFile(file) {
         link.click();
         link.remove();
     }
-}
+};
 
-export function deleteFile(file) {
-    return async (dispatch) => {
-        try {
-            const response = await axios.delete(`${API_URL}api/files?id=${file._id}`, {
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
-                },
-            });
-            dispatch(deleteFileAction(file._id));
-            console.log(response.data.message);
-        } catch (error) {
-            console.error(error?.response?.data?.message);
-        }
-    };
-}
+export const deleteFile = (file) => async (dispatch) => {
+    try {
+        const response = await axios.delete(`${API_URL}api/files?id=${file._id}`, {
+            headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+        });
+        dispatch(deleteFileAction(file._id));
+        console.log(response.data.message);
+    } catch (error) {
+        console.error(error?.response?.data?.message);
+    }
+};
 
-export function searchFiles(search) {
-    return async (dispatch) => {
-        try {
-            const response = await axios.get(`${API_URL}api/files/search?search=${search}`, {
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
-                },
-            });
-            dispatch(setFiles(response.data));
-        } catch (error) {
-            console.error(error?.response?.data?.message);
-        } finally {
-            dispatch(hideLoader());
-        }
-    };
-}
+export const searchFiles = (search) => async (dispatch) => {
+    try {
+        const response = await axios.get(`${API_URL}api/files/search?search=${search}`, {
+            headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+        });
+        dispatch(setFiles(response.data));
+    } catch (error) {
+        console.error(error?.response?.data?.message);
+    } finally {
+        dispatch(hideLoader());
+    }
+};
